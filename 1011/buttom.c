@@ -6,7 +6,7 @@
 
 #define BUTTON_PIN0 0
 #define BUTTON_PIN1 4
-#define LED_LIGHT   5
+#define LED_LIGHT   18
 
 volatile int eventCounter = 0; 
 
@@ -16,13 +16,13 @@ void myirq1(void) {
 }
 
 void myirq2(void) {
-    eventCounter--;
-    printf( "counter--: %d\n", eventCounter );
+    eventCounter++;
+    printf( "counter++: %d\n", eventCounter );
 }
 
 int main (void) {
     // sets up the wiringPi library 
-    if (wiringPiSetup () < 0) {
+    if (wiringPiSetupGpio () < 0) {
         fprintf (stderr, "Unable to setup wiringPi: %s\n", strerror (errno));
         return 1; 
     }
@@ -44,12 +44,14 @@ int main (void) {
     }
 
     while ( 1 ) {
-        printf( "%d\n", eventCounter );
-        eventCounter = 0;
-        digitalWrite(LED_LIGHT, LOW);
-        delay( 500 ); // wait 1 second
-        digitalWrite(LED_LIGHT, HIGH);
-        delay( 500 ); // wait 1 second
+        // printf( "%d\n", eventCounter );
+        // eventCounter = 0;
+        if (eventCounter % 2){
+            digitalWrite(LED_LIGHT, LOW);
+            delay( 500 ); // wait 1 second
+            digitalWrite(LED_LIGHT, HIGH);
+            delay( 500 ); // wait 1 second
+        }
     }
     return 0; 
 }

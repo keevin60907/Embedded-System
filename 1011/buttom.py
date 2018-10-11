@@ -12,9 +12,9 @@ GPIO.add_event_detect(4, GPIO.FALLING, callback=my_callback, bouncetime=300)
 
 try:
     while(True):
-        GPIO.output(4, False);
+        GPIO.output(18, False);
         sleep(1);
-        GPIO.output(4, True);
+        GPIO.output(18, bool(GPIO.input(4)));
         sleep(1);
 
 except KeyboardInterrupt:
