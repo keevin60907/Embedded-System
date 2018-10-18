@@ -1,8 +1,15 @@
+from __future__ import print_function
 from adxl345 import ADXL345
+from time import sleep
 
 adxl345 = ADXL345()
 
-axes = adxl345.getAxes(True)
-print" X = %.3fG" % ( axes["x"])
-print" Y = %.3fG" % ( axes["y"])
-print" Z = %.3fG" % ( axes["z"])
+while True:
+    try:
+        axes = adxl345.getAxes(True)
+        print (" X = %.3fG, Y = %.3fG, Z = %.3fG \r" % ( axes["x"], axes["y"], axes["z"]), end=" ")
+        sleep(0.005)
+    except KeyboardInterrupt:
+        break
+
+
