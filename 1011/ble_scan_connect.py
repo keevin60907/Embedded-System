@@ -32,10 +32,13 @@ for svc in dev.services:
 
 try:
     testService = dev.getServiceByUUID(UUID(0xfff0))
-    for ch in testService.getCharacteristic():
+    for ch in testService.getCharacteristics():
         print str(ch)
-    ch = dev.getCharacteristic(uuid=UUID(0xfff1))[0]
-    if (ch.supportsRead()):
-        print ch.read()
+    # ch = dev.getCharacteristics(uuid=UUID(0xfff1))[0]
+    for ch in dev.getCharacteristics(uuid=UUID(0xfff1)):
+        if (ch.supportsRead()):
+            print str(ch.read())
+        else:
+            print 'Not support read'
 finally:
     dev.disconnect()
