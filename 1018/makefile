@@ -1,7 +1,7 @@
 
 #The following macros should be defined. 
-TARGET1=i2c-pi-arduino 
-OBJECT1=i2c-pi-arduino.o
+TARGET1=i2c-pi-Arduino 
+OBJECT1=i2c-pi-Arduino.o
 OBJECT2=
 CC=gcc
 CXX=g++
