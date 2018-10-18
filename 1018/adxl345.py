@@ -1,111 +1,114 @@
-# ADXL345 Python library for Raspberry Pi 
-#
-# author:  Jonathan Williamson
-# license: BSD, see LICENSE.txt included in this package
-# 
-# This is a Raspberry Pi Python implementation to help you get started with
-# the Adafruit Triple Axis ADXL345 breakout board:
-# http://shop.pimoroni.com/products/adafruit-triple-axis-accelerometer
+#!/usr/bin/env python
 
-import smbus
-from time import sleep
+# Python library for ADXL345 accelerometer.
 
-# select the correct i2c bus for this revision of Raspberry Pi
-revision = ([l[12:-1] for l in open('/proc/cpuinfo','r').readlines() if l[:8]=="Revision"]+['0000'])[0]
-bus = smbus.SMBus(1 if int(revision, 16) >= 4 else 0)
+# Copyright 2013 Adafruit Industries
 
-# ADXL345 constants
-EARTH_GRAVITY_MS2   = 9.80665
-SCALE_MULTIPLIER    = 0.004
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
 
-DATA_FORMAT         = 0x31
-BW_RATE             = 0x2C
-POWER_CTL           = 0x2D
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
 
-BW_RATE_1600HZ      = 0x0F
-BW_RATE_800HZ       = 0x0E
-BW_RATE_400HZ       = 0x0D
-BW_RATE_200HZ       = 0x0C
-BW_RATE_100HZ       = 0x0B
-BW_RATE_50HZ        = 0x0A
-BW_RATE_25HZ        = 0x09
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
 
-RANGE_2G            = 0x00
-RANGE_4G            = 0x01
-RANGE_8G            = 0x02
-RANGE_16G           = 0x03
+from Adafruit_I2C import Adafruit_I2C
 
-MEASURE             = 0x08
-AXES_DATA           = 0x32
 
-class ADXL345:
+class Adafruit_ADXL345(Adafruit_I2C):
 
-    address = None
+    # Minimal constants carried over from Arduino library
 
-    def __init__(self, address = 0x53):        
-        self.address = address
-        self.setBandwidthRate(BW_RATE_100HZ)
-        self.setRange(RANGE_2G)
-        self.enableMeasurement()
+    ADXL345_ADDRESS          = 0x53
 
-    def enableMeasurement(self):
-        bus.write_byte_data(self.address, POWER_CTL, MEASURE)
+    ADXL345_REG_DEVID        = 0x00 # Device ID
+    ADXL345_REG_DATAX0       = 0x32 # X-axis data 0 (6 bytes for X/Y/Z)
+    ADXL345_REG_POWER_CTL    = 0x2D # Power-saving features control
 
-    def setBandwidthRate(self, rate_flag):
-        bus.write_byte_data(self.address, BW_RATE, rate_flag)
+    ADXL345_DATARATE_0_10_HZ = 0x00
+    ADXL345_DATARATE_0_20_HZ = 0x01
+    ADXL345_DATARATE_0_39_HZ = 0x02
+    ADXL345_DATARATE_0_78_HZ = 0x03
+    ADXL345_DATARATE_1_56_HZ = 0x04
+    ADXL345_DATARATE_3_13_HZ = 0x05
+    ADXL345_DATARATE_6_25HZ  = 0x06
+    ADXL345_DATARATE_12_5_HZ = 0x07
+    ADXL345_DATARATE_25_HZ   = 0x08
+    ADXL345_DATARATE_50_HZ   = 0x09
+    ADXL345_DATARATE_100_HZ  = 0x0A # (default)
+    ADXL345_DATARATE_200_HZ  = 0x0B
+    ADXL345_DATARATE_400_HZ  = 0x0C
+    ADXL345_DATARATE_800_HZ  = 0x0D
+    ADXL345_DATARATE_1600_HZ = 0x0E
+    ADXL345_DATARATE_3200_HZ = 0x0F
 
-    # set the measurement range for 10-bit readings
-    def setRange(self, range_flag):
-        value = bus.read_byte_data(self.address, DATA_FORMAT)
+    ADXL345_RANGE_2_G        = 0x00 # +/-  2g (default)
+    ADXL345_RANGE_4_G        = 0x01 # +/-  4g
+    ADXL345_RANGE_8_G        = 0x02 # +/-  8g
+    ADXL345_RANGE_16_G       = 0x03 # +/- 16g
 
-        value &= ~0x0F;
-        value |= range_flag;  
-        value |= 0x08;
 
-        bus.write_byte_data(self.address, DATA_FORMAT, value)
-    
-    # returns the current reading from the sensor for each axis
-    #
-    # parameter gforce:
-    #    False (default): result is returned in m/s^2
-    #    True           : result is returned in gs
-    def getAxes(self, gforce = False):
-        bytes = bus.read_i2c_block_data(self.address, AXES_DATA, 6)
-        
-        x = bytes[0] | (bytes[1] << 8)
-        if(x & (1 << 16 - 1)):
-            x = x - (1<<16)
+    def __init__(self, busnum=-1, debug=False):
 
-        y = bytes[2] | (bytes[3] << 8)
-        if(y & (1 << 16 - 1)):
-            y = y - (1<<16)
+        self.accel = Adafruit_I2C(self.ADXL345_ADDRESS, busnum, debug)
 
-        z = bytes[4] | (bytes[5] << 8)
-        if(z & (1 << 16 - 1)):
-            z = z - (1<<16)
+        if self.accel.readU8(self.ADXL345_REG_DEVID) == 0xE5:
+            # Enable the accelerometer
+            self.accel.write8(self.ADXL345_REG_POWER_CTL, 0x08)
 
-        x = x * SCALE_MULTIPLIER 
-        y = y * SCALE_MULTIPLIER
-        z = z * SCALE_MULTIPLIER
 
-        if gforce == False:
-            x = x * EARTH_GRAVITY_MS2
-            y = y * EARTH_GRAVITY_MS2
-            z = z * EARTH_GRAVITY_MS2
+    def setRange(self, range):
+        # Read the data format register to preserve bits.  Update the data
+        # rate, make sure that the FULL-RES bit is enabled for range scaling
+        format = ((self.accel.readU8(self.ADXL345_REG_DATA_FORMAT) & ~0x0F) |
+          range | 0x08)
+        # Write the register back to the IC
+        seld.accel.write8(self.ADXL345_REG_DATA_FORMAT, format)
 
-        x = round(x, 4)
-        y = round(y, 4)
-        z = round(z, 4)
 
-        return {"x": x, "y": y, "z": z}
+    def getRange(self):
+        return self.accel.readU8(self.ADXL345_REG_DATA_FORMAT) & 0x03
 
-if __name__ == "__main__":
-    # if run directly we'll just create an instance of the class and output 
-    # the current readings
-    adxl345 = ADXL345()
-    
-    axes = adxl345.getAxes(True)
-    print "ADXL345 on address 0x%x:" % (adxl345.address)
-    print "   x = %.3fG" % ( axes['x'] )
-    print "   y = %.3fG" % ( axes['y'] )
-    print "   z = %.3fG" % ( axes['z'] )
+
+    def setDataRate(self, dataRate):
+        # Note: The LOW_POWER bits are currently ignored,
+        # we always keep the device in 'normal' mode
+        self.accel.write8(self.ADXL345_REG_BW_RATE, dataRate & 0x0F)
+
+
+    def getDataRate(self):
+        return self.accel.readU8(self.ADXL345_REG_BW_RATE) & 0x0F
+
+
+    # Read the accelerometer
+    def read(self):
+        raw = self.accel.readList(self.ADXL345_REG_DATAX0, 6)
+        res = []
+        for i in range(0, 6, 2):
+            g = raw[i] | (raw[i+1] << 8)
+            if g > 32767: g -= 65536
+            res.append(g)
+        return res
+
+
+# Simple example prints accelerometer data once per second:
+if __name__ == '__main__':
+
+    from time import sleep
+
+    accel = Adafruit_ADXL345()
+
+    print '[Accelerometer X, Y, Z]'
+    while True:
+        print accel.read()
+        sleep(1) # Output is fun to watch if this is commented out
