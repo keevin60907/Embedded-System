@@ -103,9 +103,9 @@ int main(void)
         printf("%d", cnt);
         printf("\nx: %05d  y: %05d  z: %05d\n", acc_xyz.x, acc_xyz.y, acc_xyz.z);
 
-        clock_gettime(CLOCK_REALTIME, &gettime_now);
-        time_difference = gettime_now.tv_nsec - start_time;
-        MicrosecondsNoSleep(frequency - time_difference);
+        // clock_gettime(CLOCK_REALTIME, &gettime_now);
+        // time_difference = gettime_now.tv_nsec - start_time;
+        // MicrosecondsNoSleep(frequency - time_difference);
             
 
     }
