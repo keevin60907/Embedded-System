@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
 
   // set up the pipeline
 
-  gst_bin_add_many(GST_BIN(pipe), src, depay_1, depay_2, dec, vc, sink, NULL);
+  gst_bin_add_many(GST_BIN(pipe), src,depay_1, depay_2, dec, vc, sink, NULL);
   gst_element_link_many(src, depay_1, depay_2, dec, vc, sink, NULL);
 
   // set up bus watch
