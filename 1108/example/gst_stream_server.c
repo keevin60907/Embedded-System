@@ -1,6 +1,7 @@
 #include<gst/gst.h>
 #include<glib.h>
 #include<signal.h>
+#include<stdio.h>
 
 
 GMainLoop *loop;
@@ -64,9 +65,19 @@ int main(int argc, char* argv[])
   // create elements
 
   src = gst_element_factory_make("v4l2src", NULL);
+  if (!src)
+    fprintf(stderr,"src error!\n");
+  
+  // src = gst_element_factory_make("fdsrc", NULL);
   enc = gst_element_factory_make("x264enc", NULL);
+  if (!enc)
+    fprintf(stderr, "enc error!\n");
   pay = gst_element_factory_make("rtph264pay", NULL);
+  if (!pay)
+    fprintf(stderr, "pay error!\n");
   sink = gst_element_factory_make("udpsink", NULL);
+  if (!sink)
+    fprintf(stderr, "sink error!\n");
   
   // set elements properties
 
