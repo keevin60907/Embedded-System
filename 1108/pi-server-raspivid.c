@@ -38,7 +38,7 @@ static gboolean bus_call(GstBus *bus,GstMessage *msg,gpointer data){
 
 }
 
-int main() {
+int main(int argc, char** argv) {
     int pipe_fds[2];
     pid_t pid;
 
@@ -49,7 +49,7 @@ int main() {
 
 
     if ((pid = fork()) == 0) { /* child */
-        dup2(pipe_fds[1], 1); // set stdout of the process to the write end of the pipe
+        dup2(pipe_fds[1], STDOUT_FILENO); // set stdout of the process to the write end of the pipe
         close(pipe_fds[0]);
         execvp(cmd[0], (char **) cmd); // execute the program.
         //fflush(stdout);
@@ -61,12 +61,12 @@ int main() {
     } 
 
     /* parent  to read from the input end of the pipe*/
-    dup2(pipe_fds[0], 0);
+    dup2(pipe_fds[0], STDIN_FILENO);
     close(pipe_fds[1]);
     
     //create gstreamer elements
     GMainLoop *loop;
-    GstElement *pipe,*src,*parse,*rtp,*sink;
+    GstElement *pipe,*src,*parse,*rtp, *gdp,*sink;
     GstElementFactory *factory;
     GstBus *bus;
     GstCaps *srcCaps;
@@ -80,31 +80,33 @@ int main() {
     src=gst_element_factory_make("fdsrc",NULL);      // fdsrc: default is stdin, is it right?
     sink=gst_element_factory_make("udpsink",NULL);
 
-    g_object_set(sink,"host","192.168.1.108",NULL);
+    g_object_set(sink,"host","192.168.1.214",NULL);
     g_object_set(sink,"port",5001,NULL);
 
     parse=gst_element_factory_make("h264parse",NULL);
 
     rtp=gst_element_factory_make("rtph264pay",NULL);
 
-    /*srcCaps=gst_caps_new_simple("video/x-raw",
+    gdp=gst_element_factory_make("gdpdepay", NULL);
+
+    srcCaps=gst_caps_new_simple("video/x-raw",
         "width",G_TYPE_INT,1280,
         "height",G_TYPE_INT,720,
         "framerate",GST_TYPE_FRACTION,30,1,
-        NULL);*/
+        NULL);
 
     /*check if elements init successfully*/
-    if(!(pipe&&src&&sink&&parse&&rtp)){
+    if(!(pipe&&src&&sink&&parse&&rtp&&gdp)){
         g_print("Fail to init factories!\n");
         return -1;
     }
 
     /*set up the pipeline*/
-    gst_bin_add_many(GST_BIN(pipe),src,parse,rtp,sink,NULL);
-    //gst_element_link_filtered(src,parse,srcCaps);
-    //gst_caps_unref(srcCaps);
+    gst_bin_add_many(GST_BIN(pipe),src,parse,rtp,gdp,sink,NULL);
+    // gst_element_link_filtered(src,parse,srcCaps);
+    // gst_caps_unref(srcCaps);
 
-    gst_element_link_many(src,parse,rtp,sink,NULL);
+    gst_element_link_many(src,parse,rtp,gdp,sink,NULL);
     bus=gst_pipeline_get_bus(GST_PIPELINE(pipe));
     bus_watch_id=gst_bus_add_watch(bus,bus_call,loop);
     gst_object_unref(bus);

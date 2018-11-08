@@ -81,6 +81,7 @@ int main(int argc, char* argv[])
   
   // set elements properties
 
+  g_object_set(sink, "host", "192.168.1.214", NULL);
   g_object_set(sink, "port", 5001, NULL);
   
   // tune=4 means zerolatency
