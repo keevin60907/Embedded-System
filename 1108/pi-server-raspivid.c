@@ -6,6 +6,7 @@
 #include <gst/gst.h>
 #include <glib.h>
 #include <stdlib.h>
+#include <assert.h>
 
 static gboolean bus_call(GstBus *bus,GstMessage *msg,gpointer data){
   GMainLoop *loop = (GMainLoop *) data;
@@ -45,11 +46,11 @@ int main(int argc, char** argv) {
     pipe(pipe_fds);
     //run raspivid as a child process to capture raspberry pi video capture and send to the write end of the pipe
     //char *cmd[] = {"raspivid", "-t 0 -w 1280 -h 720 -fps 60 -hf -b 2000000 -o -", 0}; //wrong format
-    const char *cmd[] = {"raspivid" , "-t", "0", "-w", "1280", "-h", "720", "-fps", "30", "-hf", "-o", "-", 0};
+    const char *cmd[] = {"raspivid" , "-t", "0", "-w", "1280", "-h", "720", "-fps", "30", "-hf", "-b", "200000", "-o", "-", 0};
 
 
     if ((pid = fork()) == 0) { /* child */
-        dup2(pipe_fds[1], STDOUT_FILENO); // set stdout of the process to the write end of the pipe
+        assert(dup2(pipe_fds[1], STDOUT_FILENO) == STDOUT_FILENO); // set stdout of the process to the write end of the pipe
         close(pipe_fds[0]);
         execvp(cmd[0], (char **) cmd); // execute the program.
         //fflush(stdout);
@@ -61,7 +62,7 @@ int main(int argc, char** argv) {
     } 
 
     /* parent  to read from the input end of the pipe*/
-    dup2(pipe_fds[0], STDIN_FILENO);
+    assert(dup2(pipe_fds[0], STDIN_FILENO) == STDIN_FILENO);
     close(pipe_fds[1]);
     
     //create gstreamer elements
@@ -87,13 +88,16 @@ int main(int argc, char** argv) {
 
     rtp=gst_element_factory_make("rtph264pay",NULL);
 
-    gdp=gst_element_factory_make("gdpdepay", NULL);
+    gdp=gst_element_factory_make("gdppay", NULL);
 
     srcCaps=gst_caps_new_simple("video/x-raw",
         "width",G_TYPE_INT,1280,
         "height",G_TYPE_INT,720,
         "framerate",GST_TYPE_FRACTION,30,1,
         NULL);
+
+    g_object_set(rtp,"config-interval",1,NULL); 
+    g_object_set(rtp,"pt",96,NULL);
 
     /*check if elements init successfully*/
     if(!(pipe&&src&&sink&&parse&&rtp&&gdp)){
