@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
   gst_init(&argc, &argv);
 
 
-  GstElement *pipe, *src, *dec, *depay, *vc, *sink;
+  GstElement *pipe, *src, *dec, *depay_1, *depay_2, *vc, *sink;
   GstBus     *bus;
   GstCaps    *srcCaps;
   guint       bus_watch_id;
@@ -65,7 +65,8 @@ int main(int argc, char* argv[])
   // create elements
 
   src = gst_element_factory_make("udpsrc", NULL);
-  depay = gst_element_factory_make("rtph264depay", NULL);
+  depay_1 = gst_element_factory_make("gdpdepay", NULL);
+  depay_2 = gst_element_factory_make("rtph264depay", NULL);
   dec = gst_element_factory_make("avdec_h264", NULL);
   vc = gst_element_factory_make("videoconvert", NULL);
   sink = gst_element_factory_make("autovideosink", NULL);
@@ -81,21 +82,21 @@ int main(int argc, char* argv[])
   // set elements properties
 
   g_object_set(src, "port", 5001, NULL);
-  g_object_set(src, "caps", srcCaps, NULL);
+  // g_object_set(src, "caps", srcCaps, NULL);
   g_object_set(sink, "sync", 0, NULL);
   gst_caps_unref(srcCaps);
 
   // check if initialize succeeded
 
-  if(!(pipe && src && dec && depay && sink && vc && srcCaps)){
+  if(!(pipe && src && dec && depay_1 && depay_2 && sink && vc && srcCaps)){
     g_print("Fail to init factories!\n");
     return -1;
   }
 
   // set up the pipeline
 
-  gst_bin_add_many(GST_BIN(pipe), src, depay, dec, vc, sink, NULL);
-  gst_element_link_many(src, depay, dec, vc, sink, NULL);
+  gst_bin_add_many(GST_BIN(pipe), src, depay_1, depay_2, dec, vc, sink, NULL);
+  gst_element_link_many(src, depay_1, depay_2, dec, vc, sink, NULL);
 
   // set up bus watch
 
