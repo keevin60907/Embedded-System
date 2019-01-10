@@ -1,0 +1,7 @@
+Plain text mail: 
+ - `mail -t < mail.txt`
+ -  FROM, TO, BCC, Reply-To, Subject are included in the txt file
+
+Attach files:
+ - `mail -A <attachment> -t < mail.txt`
+
