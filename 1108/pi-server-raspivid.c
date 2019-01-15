@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
     src=gst_element_factory_make("fdsrc",NULL);      // fdsrc: default is stdin, is it right?
     sink=gst_element_factory_make("udpsink",NULL);
 
-    g_object_set(sink,"host","192.168.1.214",NULL);
+    g_object_set(sink,"host","192.168.1.50",NULL);
     g_object_set(sink,"port",5001,NULL);
 
     parse=gst_element_factory_make("h264parse",NULL);
